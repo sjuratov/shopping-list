@@ -24,7 +24,8 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({
             azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
             azureDeployment: process.env.AZURE_OPENAI_DEPLOYMENT || '',
-            azureKey: process.env.AZURE_OPENAI_KEY || ''
+            azureKey: process.env.AZURE_OPENAI_KEY || '',
+            azureApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview'
         }));
     } else {
         res.writeHead(404);
@@ -32,7 +33,8 @@ const server = http.createServer((req, res) => {
     }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Shopping List server running at http://localhost:${PORT}`);
+    console.log(`🌐 Also available at http://127.0.0.1:${PORT}`);
     console.log(`📝 Make sure to create .env file with your Azure OpenAI credentials`);
 });
