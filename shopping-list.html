@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Shopping List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 900px;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-height: 90vh;
+        }
+
+        .chat-section, .list-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            min-height: 400px;
+            max-height: 500px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-content {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            border: 2px solid #e0e0e0;
+            color: #333;
+        }
+
+        .message.system .message-content {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .chat-input-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        #chatInput {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        #chatInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #sendBtn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #sendBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #sendBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .shopping-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 560px;
+        }
+
+        .list-item {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+        }
+
+        .list-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .list-item.completed {
+            opacity: 0.6;
+        }
+
+        .list-item.completed .item-name {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .item-quantity {
+            font-size: 14px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .stat-item {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        .config-banner {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeaa7;
+            display: none;
+        }
+
+        .config-banner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-section">
+            <h1>🤖 AI Assistant</h1>
+            <div id="configBanner" class="config-banner">
+                ⚠️ Please configure Azure OpenAI settings in the browser console or update the config in the script.
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-section">
+                <input type="text" id="chatInput" placeholder="Tell me what you need to buy..." autocomplete="off">
+                <button id="sendBtn">Send</button>
+            </div>
+        </div>
+
+        <div class="list-section">
+            <h1>🛒 Shopping List</h1>
+            <div class="shopping-list" id="shoppingList"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalItems">0</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="remainingItems">0</span>
+                    <span class="stat-label">Remaining</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update these or set via console: app.config.setConfig({...})
+        const CONFIG = {
+            azureEndpoint: '',
+            azureKey: '',
+            azureDeployment: ''
+        };
+
+        class ShoppingListApp {
+            constructor() {
+                this.items = JSON.parse(localStorage.getItem('shoppingItems')) || [];
+                this.messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+                this.config = { ...CONFIG };
+                this.conversationHistory = [];
+                this.init();
+            }
+
+            init() {
+                this.cacheElements();
+                this.bindEvents();
+                this.render();
+                this.checkConfig();
+                
+                if (this.messages.length === 0) {
+                    this.addMessage('assistant', "Hi! I'm your AI shopping assistant. Tell me what you need to buy in plain English, like 'I need milk, bread, and eggs' or 'add bananas to my list'.");
+                }
+            }
+
+            cacheElements() {
+                this.chatInput = document.getElementById('chatInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.chatMessages = document.getElementById('chatMessages');
+                this.shoppingList = document.getElementById('shoppingList');
+                this.totalItems = document.getElementById('totalItems');
+                this.remainingItems = document.getElementById('remainingItems');
+                this.configBanner = document.getElementById('configBanner');
+            }
+
+            bindEvents() {
+                this.sendBtn.addEventListener('click', () => this.handleSend());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.handleSend();
+                    }
+                });
+            }
+
+            checkConfig() {
+                if (!this.config.azureEndpoint || !this.config.azureKey || !this.config.azureDeployment) {
+                    this.configBanner.classList.add('show');
+                    this.addMessage('system', 'Please configure Azure OpenAI settings. Use: app.config.setConfig({ azureEndpoint: "...", azureKey: "...", azureDeployment: "..." })');
+                }
+            }
+
+            setConfig(newConfig) {
+                this.config = { ...this.config, ...newConfig };
+                if (this.config.azureEndpoint && this.config.azureKey && this.config.azureDeployment) {
+                    this.configBanner.classList.remove('show');
+                    this.addMessage('system', '✅ Configuration updated successfully!');
+                }
+            }
+
+            async handleSend() {
+                const text = this.chatInput.value.trim();
+                if (!text || !this.config.azureEndpoint || !this.config.azureKey) return;
+
+                this.addMessage('user', text);
+                this.chatInput.value = '';
+                this.sendBtn.disabled = true;
+                this.sendBtn.innerHTML = '<span class="loading"></span>';
+
+                try {
+                    const response = await this.callAzureOpenAI(text);
+                    this.processAIResponse(response);
+                } catch (error) {
+                    this.addMessage('system', `Error: ${error.message}`);
+                } finally {
+                    this.sendBtn.disabled = false;
+                    this.sendBtn.textContent = 'Send';
+                }
+            }
+
+            async callAzureOpenAI(userMessage) {
+                const systemPrompt = `You are a helpful shopping list assistant. Your job is to:
+1. Parse natural language requests to add, update, or remove shopping items
+2. Extract item names and quantities from user messages
+3. When quantities are not specified, ask the user politely
+4. Respond with JSON in this exact format:
+{
+  "action": "add|remove|update|clarify",
+  "items": [{"name": "item name", "quantity": "2 lbs"}],
+  "message": "friendly response to user"
+}
+
+Current shopping list: ${JSON.stringify(this.items)}
+
+Examples:
+- User: "I need milk and bread" -> {"action": "clarify", "items": [{"name": "milk"}, {"name": "bread"}], "message": "Got it! How much milk and bread do you need?"}
+- User: "2 gallons of milk and a loaf of bread" -> {"action": "add", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Added 2 gallons of milk and 1 loaf of bread to your list!"}
+- User: "remove milk" -> {"action": "remove", "items": [{"name": "milk"}], "message": "Removed milk from your list."}
+
+Always respond with valid JSON only.`;
+
+                this.conversationHistory.push({ role: 'user', content: userMessage });
+
+                const response = await fetch(`${this.config.azureEndpoint}/openai/deployments/${this.config.azureDeployment}/chat/completions?api-version=2024-02-15-preview`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'api-key': this.config.azureKey
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            ...this.conversationHistory.slice(-6)
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 500
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Azure OpenAI API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const assistantMessage = data.choices[0].message.content;
+                this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
+
+                return JSON.parse(assistantMessage);
+            }
+
+            processAIResponse(response) {
+                this.addMessage('assistant', response.message);
+
+                switch (response.action) {
+                    case 'add':
+                        response.items.forEach(item => {
+                            if (item.quantity) {
+                                this.addItem(item.name, item.quantity);
+                            }
+                        });
+                        break;
+                    case 'remove':
+                        response.items.forEach(item => {
+                            this.removeItem(item.name);
+                        });
+                        break;
+                    case 'update':
+                        response.items.forEach(item => {
+                            this.updateItem(item.name, item.quantity);
+                        });
+                        break;
+                }
+
+                this.renderList();
+            }
+
+            addItem(name, quantity) {
+                const existingItem = this.items.find(i => 
+                    i.name.toLowerCase() === name.toLowerCase()
+                );
+                
+                if (existingItem) {
+                    existingItem.quantity = quantity;
+                } else {
+                    this.items.push({
+                        id: Date.now(),
+                        name: name,
+                        quantity: quantity,
+                        completed: false
+                    });
+                }
+                this.saveItems();
+            }
+
+            removeItem(name) {
+                this.items = this.items.filter(i => 
+                    i.name.toLowerCase() !== name.toLowerCase()
+                );
+                this.saveItems();
+            }
+
+            updateItem(name, quantity) {
+                const item = this.items.find(i => 
+                    i.name.toLowerCase() === name.toLowerCase()
+                );
+                if (item && quantity) {
+                    item.quantity = quantity;
+                    this.saveItems();
+                }
+            }
+
+            toggleItem(id) {
+                const item = this.items.find(i => i.id === id);
+                if (item) {
+                    item.completed = !item.completed;
+                    this.saveItems();
+                    this.renderList();
+                }
+            }
+
+            addMessage(role, content) {
+                this.messages.push({ role, content, timestamp: Date.now() });
+                this.saveMessages();
+                this.renderMessages();
+            }
+
+            render() {
+                this.renderMessages();
+                this.renderList();
+            }
+
+            renderMessages() {
+                if (this.messages.length === 0) {
+                    this.chatMessages.innerHTML = '<div class="empty-state"><p>Start a conversation...</p></div>';
+                    return;
+                }
+
+                this.chatMessages.innerHTML = this.messages.map(msg => `
+                    <div class="message ${msg.role}">
+                        <div class="message-content">${this.escapeHtml(msg.content)}</div>
+                    </div>
+                `).join('');
+
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            renderList() {
+                if (this.items.length === 0) {
+                    this.shoppingList.innerHTML = `
+                        <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            <p>Your shopping list is empty</p>
+                        </div>
+                    `;
+                } else {
+                    this.shoppingList.innerHTML = this.items.map(item => `
+                        <div class="list-item ${item.completed ? 'completed' : ''}">
+                            <input type="checkbox" ${item.completed ? 'checked' : ''} 
+                                   onchange="app.toggleItem(${item.id})">
+                            <div class="item-info">
+                                <div class="item-name">${this.escapeHtml(item.name)}</div>
+                                <div class="item-quantity">${this.escapeHtml(item.quantity)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                this.updateStats();
+            }
+
+            updateStats() {
+                this.totalItems.textContent = this.items.length;
+                this.remainingItems.textContent = this.items.filter(i => !i.completed).length;
+            }
+
+            saveItems() {
+                localStorage.setItem('shoppingItems', JSON.stringify(this.items));
+            }
+
+            saveMessages() {
+                localStorage.setItem('chatMessages', JSON.stringify(this.messages));
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        const app = new ShoppingListApp();
+        
+        // Expose config setter globally for easy setup
+        window.app = {
+            config: {
+                setConfig: (config) => app.setConfig(config)
+            }
+        };
+
+        console.log('💡 To configure Azure OpenAI, use:');
+        console.log('app.config.setConfig({ azureEndpoint: "https://...", azureKey: "...", azureDeployment: "..." })');
+    </script>
+</body>
+</html>
