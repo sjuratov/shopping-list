@@ -857,6 +857,7 @@
                     messages: [],
                     conversationHistory: [],
                     pendingItems: null,
+                    pendingAction: null,
                     createdAt: now.toISOString(),
                     updatedAt: now.toISOString()
                 };
@@ -928,27 +929,38 @@
 1. Parse natural language requests to add, update, or remove shopping items
 2. Extract item names and quantities from user messages
 3. When quantities are not specified, ask the user politely
-4. Ask which list to add items to if action is "add" and targetListId is not specified
-5. If there are no existing shopping lists, suggest creating a new list with a name
-6. Respond with JSON in this exact format:
+4. BEFORE making ANY changes (add/remove/update), ALWAYS show a preview of what will be done
+5. Wait for user confirmation before executing changes
+6. If there are no existing shopping lists, suggest creating a new list with a name
+7. Respond with JSON in this exact format:
+
 {
-  "action": "add|remove|update|clarify|ask_list",
+  "action": "add|remove|update|clarify|ask_list|preview|confirm",
   "items": [{"name": "item name", "quantity": "2 lbs"}],
   "targetListId": null,
   "targetListName": "optional new list name",
-  "message": "friendly response to user"
+  "message": "friendly response to user",
+  "preview": "optional formatted preview of changes"
 }
 
 Available shopping lists: ${JSON.stringify(allLists)}
 Current active list: ${activeListInfo}
 
+IMPORTANT WORKFLOW:
+- When user provides items with quantities, use action "preview" to show what will be done
+- Format the preview nicely with bullet points showing all changes
+- Only use action "add/remove/update" after user confirms (says yes, ok, confirm, etc.)
+
 Examples:
 - User: "I need milk and bread" -> {"action": "clarify", "items": [{"name": "milk"}, {"name": "bread"}], "message": "Got it! How much milk and bread do you need?"}
-- User: "2 gallons of milk and a loaf of bread" (with existing list) -> {"action": "ask_list", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Should I add these to your current list '${activeListName}', or would you like to create a new list or choose a different one?"}
-- User: "2 gallons of milk and a loaf of bread" (no existing list) -> {"action": "ask_list", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "I'll create a shopping list for you. What would you like to name it?"}
-- User: "add to current list" or "yes" -> {"action": "add", "items": [...pending items...], "targetListId": ${activeListId}, "message": "Added items to ${activeListName}!"}
-- User: "create new list called Groceries" -> {"action": "add", "items": [...], "targetListId": null, "targetListName": "Groceries", "message": "Created new list 'Groceries' and added items!"}
-- User: "remove milk" -> {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "Removed milk from your list."}
+
+- User: "2 gallons of milk and a loaf of bread" -> {"action": "preview", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "I'll help you with that! Here's what I'm planning to do:\n\n📋 **Action:** Create new shopping list\n**List name:** [Ask user for name]\n\n🛒 **Items to add:**\n• Milk - 2 gallons\n• Bread - 1 loaf\n\nShould I proceed? (yes/no)"}
+
+- User: "yes" or "ok" (after preview) -> {"action": "add", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "targetListId": ${activeListId}, "targetListName": "Shopping List", "message": "✅ Done! Added 2 items to your list."}
+
+- User: "remove milk from my list" -> {"action": "preview", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "I'll remove the following:\n\n🗑️ **Items to remove:**\n• Milk\n\nFrom list: '${activeListName}'\n\nConfirm? (yes/no)"}
+
+- User: "yes" (after remove preview) -> {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "✅ Removed milk from ${activeListName}"}
 
 Always respond with valid JSON only.`;
 
@@ -997,6 +1009,17 @@ Always respond with valid JSON only.`;
                 const session = this.getActiveSession();
 
                 switch (response.action) {
+                    case 'preview':
+                        // Store pending changes for confirmation
+                        this.pendingItems = response.items;
+                        session.pendingItems = response.items;
+                        session.pendingAction = {
+                            targetListId: response.targetListId,
+                            targetListName: response.targetListName,
+                            actionType: response.items ? 'add' : 'other'
+                        };
+                        this.saveSessions();
+                        break;
                     case 'ask_list':
                         this.pendingItems = response.items;
                         session.pendingItems = response.items;
@@ -1006,6 +1029,14 @@ Always respond with valid JSON only.`;
                         const itemsToAdd = response.items || this.pendingItems;
                         if (itemsToAdd) {
                             let targetListId = response.targetListId;
+                            
+                            // Check if we have pending action data
+                            if (session.pendingAction && session.pendingAction.targetListName) {
+                                response.targetListName = session.pendingAction.targetListName;
+                            }
+                            if (session.pendingAction && session.pendingAction.targetListId) {
+                                targetListId = session.pendingAction.targetListId;
+                            }
                             
                             if (response.targetListName) {
                                 const newList = this.createNewList(response.targetListName);
@@ -1024,6 +1055,7 @@ Always respond with valid JSON only.`;
                             });
                             this.pendingItems = null;
                             session.pendingItems = null;
+                            session.pendingAction = null;
                             this.saveSessions();
                         }
                         break;
