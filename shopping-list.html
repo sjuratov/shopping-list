@@ -1042,6 +1042,7 @@ Always respond with valid JSON only.`;
             }
 
             getActiveList() {
+                if (this.shoppingLists.length === 0) return null;
                 return this.shoppingLists.find(l => l.id === this.activeListId) || this.shoppingLists[0];
             }
 
@@ -1073,15 +1074,12 @@ Always respond with valid JSON only.`;
             }
 
             deleteList(listId) {
-                if (this.shoppingLists.length === 1) {
-                    alert('You must have at least one shopping list');
-                    return;
-                }
-                
                 this.shoppingLists = this.shoppingLists.filter(l => l.id !== listId);
                 
-                if (this.activeListId === listId) {
+                if (this.shoppingLists.length > 0 && this.activeListId === listId) {
                     this.activeListId = this.shoppingLists[0].id;
+                } else if (this.shoppingLists.length === 0) {
+                    this.activeListId = null;
                 }
                 
                 this.saveLists();
@@ -1387,6 +1385,21 @@ Always respond with valid JSON only.`;
 
             renderList() {
                 const activeList = this.getActiveList();
+                
+                if (!activeList) {
+                    this.activeListTitle.textContent = 'No List Selected';
+                    this.shoppingList.innerHTML = `
+                        <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            <p>No shopping lists. Create one to get started!</p>
+                        </div>
+                    `;
+                    this.totalItems.textContent = '0';
+                    return;
+                }
+                
                 this.activeListTitle.textContent = activeList.name;
                 
                 if (activeList.items.length === 0) {
@@ -1435,7 +1448,7 @@ Always respond with valid JSON only.`;
 
             updateStats() {
                 const activeList = this.getActiveList();
-                this.totalItems.textContent = activeList.items.length;
+                this.totalItems.textContent = activeList ? activeList.items.length : 0;
             }
 
             saveLists() {
