@@ -169,22 +169,6 @@
             transform: translateX(5px);
         }
 
-        .list-item.completed {
-            opacity: 0.6;
-        }
-
-        .list-item.completed .item-name {
-            text-decoration: line-through;
-            color: #999;
-        }
-
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: #667eea;
-        }
-
         .item-info {
             flex: 1;
         }
@@ -199,6 +183,71 @@
             font-size: 14px;
             color: #666;
             margin-top: 2px;
+        }
+
+        .item-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .control-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #f0f0f0;
+            border-color: #999;
+            transform: scale(1.05);
+        }
+
+        .control-btn.delete-btn {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .control-btn.delete-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .control-btn.plus-btn {
+            color: #28a745;
+            border-color: #28a745;
+        }
+
+        .control-btn.plus-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        .control-btn.minus-btn {
+            color: #ffc107;
+            border-color: #ffc107;
+        }
+
+        .control-btn.minus-btn:hover {
+            background: #ffc107;
+            color: white;
+        }
+
+        .qty-display {
+            min-width: 30px;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
         }
 
         .empty-state {
@@ -302,11 +351,7 @@
             <div class="stats">
                 <div class="stat-item">
                     <span class="stat-number" id="totalItems">0</span>
-                    <span class="stat-label">Total</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="remainingItems">0</span>
-                    <span class="stat-label">Remaining</span>
+                    <span class="stat-label">Total Items</span>
                 </div>
             </div>
         </div>
@@ -364,7 +409,6 @@
                 this.chatMessages = document.getElementById('chatMessages');
                 this.shoppingList = document.getElementById('shoppingList');
                 this.totalItems = document.getElementById('totalItems');
-                this.remainingItems = document.getElementById('remainingItems');
                 this.configBanner = document.getElementById('configBanner');
             }
 
@@ -499,21 +543,41 @@ Always respond with valid JSON only.`;
             }
 
             addItem(name, quantity) {
+                const normalizedQty = this.normalizeQuantity(quantity);
                 const existingItem = this.items.find(i => 
                     i.name.toLowerCase() === name.toLowerCase()
                 );
                 
                 if (existingItem) {
-                    existingItem.quantity = quantity;
+                    existingItem.quantity = normalizedQty;
+                    existingItem.numericQty = this.extractNumericQuantity(normalizedQty);
                 } else {
                     this.items.push({
                         id: this.nextId++,
                         name: name,
-                        quantity: quantity,
-                        completed: false
+                        quantity: normalizedQty,
+                        numericQty: this.extractNumericQuantity(normalizedQty)
                     });
                 }
                 this.saveItems();
+            }
+
+            extractNumericQuantity(quantity) {
+                const match = quantity.match(/^(\d+)/);
+                return match ? parseInt(match[1]) : 1;
+            }
+
+            normalizeQuantity(quantity) {
+                // Handle ranges like "1-10 lbs" -> pick the midpoint
+                const rangeMatch = quantity.match(/^(\d+)-(\d+)\s*(.*)$/);
+                if (rangeMatch) {
+                    const min = parseInt(rangeMatch[1]);
+                    const max = parseInt(rangeMatch[2]);
+                    const midpoint = Math.round((min + max) / 2);
+                    const unit = rangeMatch[3] || '';
+                    return `${midpoint} ${unit}`.trim();
+                }
+                return quantity;
             }
 
             removeItem(name) {
@@ -528,18 +592,34 @@ Always respond with valid JSON only.`;
                     i.name.toLowerCase() === name.toLowerCase()
                 );
                 if (item && quantity) {
-                    item.quantity = quantity;
+                    const normalizedQty = this.normalizeQuantity(quantity);
+                    item.quantity = normalizedQty;
+                    item.numericQty = this.extractNumericQuantity(normalizedQty);
                     this.saveItems();
                 }
             }
 
-            toggleItem(id) {
-                console.log('toggleItem called with id:', id);
-                console.log('Current items:', this.items);
+            deleteItem(id) {
+                this.items = this.items.filter(i => i.id !== id);
+                this.saveItems();
+                this.renderList();
+            }
+
+            incrementQuantity(id) {
                 const item = this.items.find(i => i.id === id);
-                console.log('Found item:', item);
                 if (item) {
-                    item.completed = !item.completed;
+                    item.numericQty = (item.numericQty || 1) + 1;
+                    item.quantity = item.quantity.replace(/^\d+/, item.numericQty);
+                    this.saveItems();
+                    this.renderList();
+                }
+            }
+
+            decrementQuantity(id) {
+                const item = this.items.find(i => i.id === id);
+                if (item && item.numericQty > 1) {
+                    item.numericQty -= 1;
+                    item.quantity = item.quantity.replace(/^\d+/, item.numericQty);
                     this.saveItems();
                     this.renderList();
                 }
@@ -582,21 +662,33 @@ Always respond with valid JSON only.`;
                     `;
                 } else {
                     this.shoppingList.innerHTML = this.items.map(item => `
-                        <div class="list-item ${item.completed ? 'completed' : ''}" data-id="${item.id}">
-                            <input type="checkbox" ${item.completed ? 'checked' : ''}>
+                        <div class="list-item" data-id="${item.id}">
                             <div class="item-info">
                                 <div class="item-name">${this.escapeHtml(item.name)}</div>
                                 <div class="item-quantity">${this.escapeHtml(item.quantity)}</div>
+                            </div>
+                            <div class="item-controls">
+                                <button class="control-btn minus-btn" data-action="minus">−</button>
+                                <span class="qty-display">${item.numericQty || 1}</span>
+                                <button class="control-btn plus-btn" data-action="plus">+</button>
+                                <button class="control-btn delete-btn" data-action="delete">🗑</button>
                             </div>
                         </div>
                     `).join('');
                     
                     // Attach event listeners after rendering
                     this.shoppingList.querySelectorAll('.list-item').forEach(itemEl => {
-                        const checkbox = itemEl.querySelector('input[type="checkbox"]');
                         const id = parseFloat(itemEl.dataset.id);
-                        console.log('Attaching listener for item:', id, itemEl.dataset.id);
-                        checkbox.addEventListener('change', () => this.toggleItem(id));
+                        
+                        itemEl.querySelectorAll('.control-btn').forEach(btn => {
+                            btn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const action = btn.dataset.action;
+                                if (action === 'plus') this.incrementQuantity(id);
+                                else if (action === 'minus') this.decrementQuantity(id);
+                                else if (action === 'delete') this.deleteItem(id);
+                            });
+                        });
                     });
                 }
 
@@ -605,7 +697,6 @@ Always respond with valid JSON only.`;
 
             updateStats() {
                 this.totalItems.textContent = this.items.length;
-                this.remainingItems.textContent = this.items.filter(i => !i.completed).length;
             }
 
             saveItems() {
