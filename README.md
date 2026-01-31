@@ -51,3 +51,9 @@ app.config.setConfig({
 - "Update bread to 2 loaves"
 
 The AI will ask for quantities if not specified and intelligently parse your requests!
+
+---
+
+## Disclaimer
+
+This app was vibe coded using **GitHub Copilot CLI** with the **Claude Sonnet 4.5** model.
