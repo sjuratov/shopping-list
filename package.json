@@ -1,12 +1,17 @@
 {
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "dotenv": "^17.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "nodemon": "^3.1.11"
   }
 }
