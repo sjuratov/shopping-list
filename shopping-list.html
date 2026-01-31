@@ -11,20 +11,58 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --container-bg: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --text-tertiary: #999;
+            --border-color: #e0e0e0;
+            --item-bg: #f8f9fa;
+            --item-hover-bg: #e9ecef;
+            --message-bg: #f8f9fa;
+            --assistant-msg-bg: white;
+            --assistant-msg-border: #e0e0e0;
+            --input-bg: white;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --category-header-color: #667eea;
+        }
+
+        body.dark-mode {
+            --bg-gradient-start: #1a1a2e;
+            --bg-gradient-end: #16213e;
+            --container-bg: #0f1419;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-tertiary: #808080;
+            --border-color: #2d3748;
+            --item-bg: #1a202c;
+            --item-hover-bg: #2d3748;
+            --message-bg: #1a202c;
+            --assistant-msg-bg: #1a202c;
+            --assistant-msg-border: #2d3748;
+            --input-bg: #1a202c;
+            --shadow-color: rgba(0, 0, 0, 0.6);
+            --category-header-color: #9f7aea;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background 0.3s ease;
         }
 
         .container {
-            background: white;
+            background: var(--container-bg);
+            box-shadow: 0 20px 60px var(--shadow-color);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             width: 100%;
             max-width: 1400px;
             padding: 40px;
@@ -40,13 +78,14 @@
         }
 
         h1 {
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 20px;
             font-size: 2rem;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            transition: color 0.3s ease;
         }
 
         .chat-header {
@@ -59,6 +98,33 @@
         .chat-header h1 {
             margin-bottom: 0;
             flex: 1;
+        }
+
+        .dark-mode-toggle {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #667eea;
+            background: var(--input-bg);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .dark-mode-toggle:hover {
+            transform: scale(1.1);
+            background: #667eea;
+        }
+
+        body.dark-mode .dark-mode-toggle {
+            border-color: #9f7aea;
+        }
+
+        body.dark-mode .dark-mode-toggle:hover {
+            background: #9f7aea;
         }
 
         .session-selector {
@@ -202,10 +268,11 @@
             overflow-y: auto;
             margin-bottom: 20px;
             padding: 20px;
-            background: #f8f9fa;
+            background: var(--message-bg);
             border-radius: 10px;
             min-height: 400px;
             max-height: 500px;
+            transition: background 0.3s ease;
         }
 
         .message {
@@ -242,10 +309,11 @@
         }
 
         .message.assistant .message-content {
-            background: white;
-            border: 2px solid #e0e0e0;
-            color: #333;
+            background: var(--assistant-msg-bg);
+            border: 2px solid var(--assistant-msg-border);
+            color: var(--text-primary);
             line-height: 1.6;
+            transition: all 0.3s ease;
         }
 
         .message.assistant .message-content strong {
@@ -326,7 +394,7 @@
         }
 
         .list-item {
-            background: #f8f9fa;
+            background: var(--item-bg);
             padding: 15px 20px;
             margin-bottom: 10px;
             border-radius: 10px;
@@ -337,7 +405,7 @@
         }
 
         .list-item:hover {
-            background: #e9ecef;
+            background: var(--item-hover-bg);
             transform: translateX(5px);
         }
 
@@ -370,13 +438,13 @@
         .item-name {
             font-size: 16px;
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
             transition: all 0.3s;
         }
 
         .item-quantity {
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
             margin-top: 2px;
             transition: all 0.3s;
         }
@@ -388,15 +456,16 @@
         .category-header {
             font-size: 14px;
             font-weight: 700;
-            color: #667eea;
+            color: var(--category-header-color);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 12px;
             padding-bottom: 8px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid var(--category-header-color);
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.3s ease;
         }
 
         .category-icon {
@@ -529,15 +598,16 @@
         }
 
         .recipe-content {
-            background: #f8f9fa;
+            background: var(--item-bg);
             padding: 20px;
             border-radius: 10px;
             line-height: 1.8;
-            color: #333;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
         }
 
         .recipe-content h3 {
-            color: #667eea;
+            color: var(--category-header-color);
             font-size: 16px;
             margin-top: 15px;
             margin-bottom: 10px;
@@ -587,7 +657,7 @@
         }
 
         .list-name-item {
-            background: #f8f9fa;
+            background: var(--item-bg);
             padding: 15px 20px;
             margin-bottom: 10px;
             border-radius: 10px;
@@ -600,13 +670,18 @@
         }
 
         .list-name-item:hover {
-            background: #e9ecef;
+            background: var(--item-hover-bg);
             transform: translateX(5px);
         }
 
         .list-name-item.active {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
             border-color: #667eea;
+        }
+
+        body.dark-mode .list-name-item.active {
+            background: linear-gradient(135deg, rgba(159, 122, 234, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+            border-color: #9f7aea;
         }
 
         .list-name-text {
@@ -704,10 +779,12 @@
         #newListInput {
             flex: 1;
             padding: 12px 16px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid var(--border-color);
             border-radius: 8px;
             font-size: 14px;
-            transition: all 0.3s;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
         }
 
         #newListInput:focus {
@@ -783,6 +860,9 @@
         <div class="chat-section">
             <div class="chat-header">
                 <h1>🤖 AI Assistant</h1>
+                <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">
+                    <span id="darkModeIcon">🌙</span>
+                </button>
                 <div class="session-selector">
                     <button class="current-session-btn" id="currentSessionBtn">
                         <span id="currentSessionName">New Chat</span>
@@ -908,6 +988,8 @@
                 this.sessionDropdown = document.getElementById('sessionDropdown');
                 this.newSessionBtn = document.getElementById('newSessionBtn');
                 this.sessionList = document.getElementById('sessionList');
+                this.darkModeToggle = document.getElementById('darkModeToggle');
+                this.darkModeIcon = document.getElementById('darkModeIcon');
             }
 
             bindEvents() {
@@ -944,6 +1026,12 @@
                         this.sessionDropdown.classList.remove('show');
                     }
                 });
+                
+                // Dark mode toggle
+                this.darkModeToggle.addEventListener('click', () => this.toggleDarkMode());
+                
+                // Load dark mode preference
+                this.loadDarkMode();
             }
 
             checkConfig() {
@@ -1956,6 +2044,24 @@ NEVER skip preview step. Be concise. Use emojis sparingly.`;
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
+            }
+
+            toggleDarkMode() {
+                const isDark = document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+                this.updateDarkModeIcon(isDark);
+            }
+
+            loadDarkMode() {
+                const darkMode = localStorage.getItem('darkMode');
+                if (darkMode === 'enabled') {
+                    document.body.classList.add('dark-mode');
+                    this.updateDarkModeIcon(true);
+                }
+            }
+
+            updateDarkModeIcon(isDark) {
+                this.darkModeIcon.textContent = isDark ? '☀️' : '🌙';
             }
         }
 
