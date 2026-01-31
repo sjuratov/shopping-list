@@ -245,6 +245,30 @@
             background: white;
             border: 2px solid #e0e0e0;
             color: #333;
+            line-height: 1.6;
+        }
+
+        .message.assistant .message-content strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .message.assistant .message-content ul {
+            list-style: none;
+            margin: 10px 0;
+            padding-left: 0;
+        }
+
+        .message.assistant .message-content li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .message.assistant .message-content li:before {
+            content: "🔹";
+            position: absolute;
+            left: 0;
         }
 
         .message.system .message-content {
@@ -948,19 +972,27 @@ Current active list: ${activeListInfo}
 
 IMPORTANT WORKFLOW:
 - When user provides items with quantities, use action "preview" to show what will be done
-- Format the preview nicely with bullet points showing all changes
+- Format messages with markdown-style formatting: **bold text** for headers, bullet points (•) for lists
+- Use emojis to make messages clear and friendly
 - Only use action "add/remove/update" after user confirms (says yes, ok, confirm, etc.)
+
+FORMATTING GUIDELINES:
+- Use **Bold Text** for section headers and important labels
+- Use bullet points (•) for lists of items
+- Include emojis for visual clarity: 📋 for list actions, 🛒 for items, 🗑️ for removals, ✅ for success
+- Add blank lines between sections for readability
+- Format: "• Item Name - Quantity" for each item
 
 Examples:
 - User: "I need milk and bread" -> {"action": "clarify", "items": [{"name": "milk"}, {"name": "bread"}], "message": "Got it! How much milk and bread do you need?"}
 
-- User: "2 gallons of milk and a loaf of bread" -> {"action": "preview", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "I'll help you with that! Here's what I'm planning to do:\n\n📋 **Action:** Create new shopping list\n**List name:** [Ask user for name]\n\n🛒 **Items to add:**\n• Milk - 2 gallons\n• Bread - 1 loaf\n\nShould I proceed? (yes/no)"}
+- User: "2 gallons of milk and a loaf of bread" -> {"action": "preview", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Great! Let me show you what I'll do:\n\n📋 **Action:** Create new shopping list\n**List name:** I'll ask you to name it\n\n🛒 **Items to add:**\n• Milk - 2 gallons\n• Bread - 1 loaf\n\nShould I proceed? Reply **yes** to confirm or **no** to cancel."}
 
-- User: "yes" or "ok" (after preview) -> {"action": "add", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "targetListId": ${activeListId}, "targetListName": "Shopping List", "message": "✅ Done! Added 2 items to your list."}
+- User: "yes" or "ok" (after preview) -> {"action": "add", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "targetListId": ${activeListId}, "targetListName": "Shopping List", "message": "✅ **Done!** Added 2 items to your list."}
 
-- User: "remove milk from my list" -> {"action": "preview", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "I'll remove the following:\n\n🗑️ **Items to remove:**\n• Milk\n\nFrom list: '${activeListName}'\n\nConfirm? (yes/no)"}
+- User: "remove milk from my list" -> {"action": "preview", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "I'll remove the following from **${activeListName}**:\n\n🗑️ **Items to remove:**\n• Milk\n\nConfirm? Reply **yes** or **no**."}
 
-- User: "yes" (after remove preview) -> {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "✅ Removed milk from ${activeListName}"}
+- User: "yes" (after remove preview) -> {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "✅ **Removed** milk from ${activeListName}"}
 
 Always respond with valid JSON only.`;
 
@@ -1409,13 +1441,62 @@ Always respond with valid JSON only.`;
                     return;
                 }
 
-                this.chatMessages.innerHTML = session.messages.map(msg => `
-                    <div class="message ${msg.role}">
-                        <div class="message-content">${this.escapeHtml(msg.content)}</div>
-                    </div>
-                `).join('');
+                this.chatMessages.innerHTML = session.messages.map(msg => {
+                    const formattedContent = msg.role === 'assistant' 
+                        ? this.formatAssistantMessage(msg.content)
+                        : this.escapeHtml(msg.content);
+                    
+                    return `
+                        <div class="message ${msg.role}">
+                            <div class="message-content">${formattedContent}</div>
+                        </div>
+                    `;
+                }).join('');
 
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            formatAssistantMessage(content) {
+                // Escape HTML first
+                let formatted = this.escapeHtml(content);
+                
+                // Convert **bold** to <strong>
+                formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                
+                // Convert bullet points (• or -) at start of line to proper list items
+                const lines = formatted.split('\n');
+                let inList = false;
+                let result = [];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // Check if line starts with bullet
+                    if (line.startsWith('•') || line.match(/^-\s/)) {
+                        if (!inList) {
+                            result.push('<ul style="margin: 10px 0; padding-left: 20px;">');
+                            inList = true;
+                        }
+                        const itemText = line.replace(/^[•-]\s*/, '');
+                        result.push(`<li style="margin: 5px 0;">${itemText}</li>`);
+                    } else {
+                        if (inList) {
+                            result.push('</ul>');
+                            inList = false;
+                        }
+                        if (line) {
+                            result.push(line + '<br>');
+                        } else {
+                            result.push('<br>');
+                        }
+                    }
+                }
+                
+                if (inList) {
+                    result.push('</ul>');
+                }
+                
+                return result.join('');
             }
 
             renderList() {
