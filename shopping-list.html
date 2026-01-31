@@ -798,7 +798,7 @@
                 
                 // Chat session management
                 this.chatSessions = JSON.parse(localStorage.getItem('chatSessions')) || [];
-                this.activeSessionId = null;
+                this.activeSessionId = parseInt(localStorage.getItem('activeSessionId')) || null;
                 this.nextSessionId = Math.max(0, ...this.chatSessions.map(s => s.id || 0)) + 1;
                 
                 this.config = { ...CONFIG };
@@ -810,8 +810,17 @@
                 this.cacheElements();
                 this.bindEvents();
                 
-                // Create new session after elements are cached
-                this.createNewSession(true);
+                // Restore last active session or create first session if none exist
+                if (this.chatSessions.length === 0 || !this.activeSessionId) {
+                    this.createNewSession(true);
+                } else {
+                    // Restore pending items from active session
+                    const session = this.getActiveSession();
+                    if (session) {
+                        this.pendingItems = session.pendingItems;
+                    }
+                    this.render();
+                }
                 
                 await this.loadConfig();
                 this.checkConfig();
@@ -945,6 +954,7 @@
                 
                 this.chatSessions.push(session);
                 this.activeSessionId = session.id;
+                localStorage.setItem('activeSessionId', session.id);
                 
                 if (!isInitial) {
                     this.addMessage('assistant', "Hi! I'm your AI shopping assistant. Tell me what you need to buy, and I'll help you organize your shopping lists!");
@@ -958,6 +968,7 @@
                 const session = this.chatSessions.find(s => s.id === sessionId);
                 if (session) {
                     this.activeSessionId = sessionId;
+                    localStorage.setItem('activeSessionId', sessionId);
                     this.pendingItems = session.pendingItems;
                     this.render();
                 }
@@ -973,6 +984,7 @@
                 
                 if (this.activeSessionId === sessionId) {
                     this.activeSessionId = this.chatSessions[0].id;
+                    localStorage.setItem('activeSessionId', this.activeSessionId);
                     this.pendingItems = this.chatSessions[0].pendingItems;
                 }
                 
