@@ -1202,6 +1202,9 @@ NEVER skip preview step. Be concise. Use emojis sparingly.`;
                                 const newList = this.createNewList(response.targetListName);
                                 targetListId = newList.id;
                                 this.setActiveList(targetListId);
+                                
+                                // Auto-rename session to match the list/recipe name
+                                this.renameSession(this.activeSessionId, response.targetListName);
                             }
                             
                             if (!targetListId) {
