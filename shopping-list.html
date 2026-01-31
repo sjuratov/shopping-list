@@ -712,14 +712,7 @@
         class ShoppingListApp {
             constructor() {
                 this.shoppingLists = JSON.parse(localStorage.getItem('shoppingLists')) || [];
-                if (this.shoppingLists.length === 0) {
-                    this.shoppingLists.push({
-                        id: 1,
-                        name: 'My Shopping List',
-                        items: []
-                    });
-                }
-                this.activeListId = parseInt(localStorage.getItem('activeListId')) || this.shoppingLists[0].id;
+                this.activeListId = parseInt(localStorage.getItem('activeListId')) || null;
                 this.nextListId = Math.max(0, ...this.shoppingLists.map(l => l.id || 0)) + 1;
                 
                 // Chat session management
