@@ -1089,6 +1089,11 @@ REMEMBER: NEVER use action="add/remove/update" unless the user has already seen 
 Always respond with valid JSON only.`;
 
                 session.conversationHistory.push({ role: 'user', content: userMessage });
+                
+                // Keep conversation history manageable - last 10 messages (5 exchanges)
+                if (session.conversationHistory.length > 10) {
+                    session.conversationHistory = session.conversationHistory.slice(-10);
+                }
 
                 const apiVersion = this.config.azureApiVersion || '2024-08-01-preview';
                 const response = await fetch(`${this.config.azureEndpoint}/openai/deployments/${this.config.azureDeployment}/chat/completions?api-version=${apiVersion}`, {
@@ -1100,9 +1105,10 @@ Always respond with valid JSON only.`;
                     body: JSON.stringify({
                         messages: [
                             { role: 'system', content: systemPrompt },
-                            ...session.conversationHistory.slice(-6)
+                            ...session.conversationHistory
                         ],
-                        max_completion_tokens: 2000
+                        max_completion_tokens: 3000,
+                        temperature: 0.7
                     })
                 });
 
@@ -1113,7 +1119,19 @@ Always respond with valid JSON only.`;
                 }
 
                 const data = await response.json();
+                
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    console.error('Invalid API response:', data);
+                    throw new Error('Invalid response from AI. Please try again.');
+                }
+                
                 const assistantMessage = data.choices[0].message.content;
+                
+                if (!assistantMessage || assistantMessage.trim() === '') {
+                    console.error('Empty AI response. Response data:', data);
+                    throw new Error('AI returned empty response. Your conversation may be too long. Try starting a new chat session.');
+                }
+                
                 session.conversationHistory.push({ role: 'assistant', content: assistantMessage });
                 session.updatedAt = new Date().toISOString();
                 this.saveSessions();
@@ -1124,7 +1142,8 @@ Always respond with valid JSON only.`;
                     return JSON.parse(assistantMessage);
                 } catch (parseError) {
                     console.error('Failed to parse AI response:', assistantMessage);
-                    throw new Error('AI returned invalid JSON. Please try again.');
+                    console.error('Parse error:', parseError);
+                    throw new Error('AI returned invalid JSON. Please try again or start a new chat session.');
                 }
             }
 
