@@ -357,6 +357,28 @@
             margin-top: 2px;
         }
 
+        .category-section {
+            margin-bottom: 25px;
+        }
+
+        .category-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-icon {
+            font-size: 18px;
+        }
+
         .item-controls {
             display: flex;
             gap: 5px;
@@ -1270,19 +1292,83 @@ NEVER skip preview step. Be concise. Use emojis sparingly.`;
                 );
                 
                 const nextId = Math.max(0, ...list.items.map(i => i.id || 0)) + 1;
+                const category = this.categorizeItem(name);
                 
                 if (existingItem) {
                     existingItem.quantity = normalizedQty;
                     existingItem.numericQty = this.extractNumericQuantity(normalizedQty);
+                    existingItem.category = category;
                 } else {
                     list.items.push({
                         id: nextId,
                         name: name,
                         quantity: normalizedQty,
-                        numericQty: this.extractNumericQuantity(normalizedQty)
+                        numericQty: this.extractNumericQuantity(normalizedQty),
+                        category: category
                     });
                 }
                 this.saveLists();
+            }
+
+            categorizeItem(itemName) {
+                const name = itemName.toLowerCase();
+                
+                // Produce
+                if (name.match(/\b(apple|banana|orange|lemon|lime|grape|berry|berries|strawberr|blueberr|raspberr|peach|pear|plum|melon|watermelon|mango|pineapple|avocado|tomato|potato|onion|garlic|carrot|celery|lettuce|spinach|kale|cabbage|broccoli|cauliflower|pepper|cucumber|zucchini|squash|mushroom|corn|peas|bean|beans|herb|parsley|cilantro|basil|mint|vegetable|fruit|produce)\b/)) {
+                    return 'Produce';
+                }
+                
+                // Meat & Seafood
+                if (name.match(/\b(chicken|beef|pork|turkey|lamb|sausage|bacon|ham|steak|ground beef|meat|fish|salmon|tuna|shrimp|seafood|prawn)\b/)) {
+                    return 'Meat & Seafood';
+                }
+                
+                // Dairy & Eggs
+                if (name.match(/\b(milk|cream|cheese|butter|yogurt|egg|eggs|sour cream|cottage cheese|dairy)\b/)) {
+                    return 'Dairy & Eggs';
+                }
+                
+                // Bakery & Bread
+                if (name.match(/\b(bread|baguette|roll|rolls|bagel|bun|buns|tortilla|pita|croissant|muffin|donut|pastry|bakery)\b/)) {
+                    return 'Bakery';
+                }
+                
+                // Pantry & Dry Goods
+                if (name.match(/\b(flour|sugar|salt|pepper|spice|spices|rice|pasta|noodle|cereal|oat|oats|oil|vinegar|sauce|ketchup|mustard|mayo|mayonnaise|honey|syrup|jam|peanut butter|baking soda|baking powder|yeast|vanilla|extract|stock|broth|can|canned)\b/)) {
+                    return 'Pantry';
+                }
+                
+                // Frozen
+                if (name.match(/\b(frozen|ice cream|popsicle)\b/)) {
+                    return 'Frozen';
+                }
+                
+                // Beverages
+                if (name.match(/\b(water|juice|soda|coffee|tea|beer|wine|drink|beverage)\b/)) {
+                    return 'Beverages';
+                }
+                
+                // Snacks
+                if (name.match(/\b(chip|chips|cookie|cookies|cracker|crackers|candy|chocolate|snack|popcorn|nut|nuts)\b/)) {
+                    return 'Snacks';
+                }
+                
+                // Default category
+                return 'Other';
+            }
+
+            groupItemsByCategory(items) {
+                const grouped = {};
+                
+                items.forEach(item => {
+                    const category = item.category || 'Other';
+                    if (!grouped[category]) {
+                        grouped[category] = [];
+                    }
+                    grouped[category].push(item);
+                });
+                
+                return grouped;
             }
 
             extractNumericQuantity(quantity) {
@@ -1628,20 +1714,52 @@ NEVER skip preview step. Be concise. Use emojis sparingly.`;
                         </div>
                     `;
                 } else {
-                    html = activeList.items.map(item => `
-                        <div class="list-item" data-id="${item.id}">
-                            <div class="item-info">
-                                <div class="item-name">${this.escapeHtml(item.name)}</div>
-                                <div class="item-quantity">${this.escapeHtml(item.quantity)}</div>
+                    // Group items by category
+                    const categorizedItems = this.groupItemsByCategory(activeList.items);
+                    const categoryIcons = {
+                        'Produce': '🥬',
+                        'Meat & Seafood': '🥩',
+                        'Dairy & Eggs': '🥛',
+                        'Bakery': '🥖',
+                        'Pantry': '🏺',
+                        'Frozen': '❄️',
+                        'Beverages': '🥤',
+                        'Snacks': '🍿',
+                        'Other': '📦'
+                    };
+                    
+                    const categoryOrder = ['Produce', 'Meat & Seafood', 'Dairy & Eggs', 'Bakery', 'Pantry', 'Frozen', 'Beverages', 'Snacks', 'Other'];
+                    
+                    html = categoryOrder.map(category => {
+                        const items = categorizedItems[category];
+                        if (!items || items.length === 0) return '';
+                        
+                        const icon = categoryIcons[category] || '📦';
+                        const itemsHtml = items.map(item => `
+                            <div class="list-item" data-id="${item.id}">
+                                <div class="item-info">
+                                    <div class="item-name">${this.escapeHtml(item.name)}</div>
+                                    <div class="item-quantity">${this.escapeHtml(item.quantity)}</div>
+                                </div>
+                                <div class="item-controls">
+                                    <button class="control-btn minus-btn" data-action="minus">−</button>
+                                    <span class="qty-display">${item.numericQty || 1}</span>
+                                    <button class="control-btn plus-btn" data-action="plus">+</button>
+                                    <button class="control-btn delete-btn" data-action="delete">🗑</button>
+                                </div>
                             </div>
-                            <div class="item-controls">
-                                <button class="control-btn minus-btn" data-action="minus">−</button>
-                                <span class="qty-display">${item.numericQty || 1}</span>
-                                <button class="control-btn plus-btn" data-action="plus">+</button>
-                                <button class="control-btn delete-btn" data-action="delete">🗑</button>
+                        `).join('');
+                        
+                        return `
+                            <div class="category-section">
+                                <div class="category-header">
+                                    <span class="category-icon">${icon}</span>
+                                    <span>${category}</span>
+                                </div>
+                                ${itemsHtml}
                             </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
                 }
                 
                 // Add recipe section if exists
