@@ -917,28 +917,38 @@
                 const allLists = this.shoppingLists.map(l => ({ id: l.id, name: l.name }));
                 const session = this.getActiveSession();
                 
+                const activeListInfo = activeList 
+                    ? `{"id": ${activeList.id}, "name": "${activeList.name}", "items": ${JSON.stringify(activeList.items)}}`
+                    : 'null';
+                
+                const activeListName = activeList ? activeList.name : 'a new list';
+                const activeListId = activeList ? activeList.id : 'null';
+                
                 const systemPrompt = `You are a helpful shopping list assistant. Your job is to:
 1. Parse natural language requests to add, update, or remove shopping items
 2. Extract item names and quantities from user messages
 3. When quantities are not specified, ask the user politely
 4. Ask which list to add items to if action is "add" and targetListId is not specified
-5. Respond with JSON in this exact format:
+5. If there are no existing shopping lists, suggest creating a new list with a name
+6. Respond with JSON in this exact format:
 {
   "action": "add|remove|update|clarify|ask_list",
   "items": [{"name": "item name", "quantity": "2 lbs"}],
   "targetListId": null,
+  "targetListName": "optional new list name",
   "message": "friendly response to user"
 }
 
 Available shopping lists: ${JSON.stringify(allLists)}
-Current active list: {"id": ${activeList.id}, "name": "${activeList.name}", "items": ${JSON.stringify(activeList.items)}}
+Current active list: ${activeListInfo}
 
 Examples:
 - User: "I need milk and bread" -> {"action": "clarify", "items": [{"name": "milk"}, {"name": "bread"}], "message": "Got it! How much milk and bread do you need?"}
-- User: "2 gallons of milk and a loaf of bread" -> {"action": "ask_list", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Should I add these to your current list '${activeList.name}', or would you like to create a new list or choose a different one?"}
-- User: "add to current list" or "yes" -> {"action": "add", "items": [...pending items...], "targetListId": ${activeList.id}, "message": "Added items to ${activeList.name}!"}
+- User: "2 gallons of milk and a loaf of bread" (with existing list) -> {"action": "ask_list", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Should I add these to your current list '${activeListName}', or would you like to create a new list or choose a different one?"}
+- User: "2 gallons of milk and a loaf of bread" (no existing list) -> {"action": "ask_list", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "I'll create a shopping list for you. What would you like to name it?"}
+- User: "add to current list" or "yes" -> {"action": "add", "items": [...pending items...], "targetListId": ${activeListId}, "message": "Added items to ${activeListName}!"}
 - User: "create new list called Groceries" -> {"action": "add", "items": [...], "targetListId": null, "targetListName": "Groceries", "message": "Created new list 'Groceries' and added items!"}
-- User: "remove milk" -> {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeList.id}, "message": "Removed milk from your list."}
+- User: "remove milk" -> {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "Removed milk from your list."}
 
 Always respond with valid JSON only.`;
 
