@@ -463,6 +463,63 @@
             margin-top: 5px;
         }
 
+        .recipe-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 3px dashed #e0e0e0;
+        }
+
+        .recipe-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .recipe-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .recipe-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .recipe-content h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .recipe-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .recipe-content ol, .recipe-content ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        .recipe-content li {
+            margin: 8px 0;
+        }
+
+        .recipe-content p {
+            margin: 10px 0;
+        }
+
+        .recipe-content strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+
         .loading {
             display: inline-block;
             width: 12px;
@@ -952,22 +1009,31 @@
                 const systemPrompt = `You are a helpful shopping list assistant. Your job is to:
 1. Parse natural language requests to add, update, or remove shopping items
 2. Extract item names and quantities from user messages
-3. When quantities are not specified, ask the user politely
-4. CRITICAL: NEVER execute add/remove/update actions directly - ALWAYS use "preview" action FIRST
-5. Wait for explicit user confirmation (yes/ok/confirm) before executing changes
-6. If there are no existing shopping lists, suggest creating a new list with a name
-7. Respond with JSON in this exact format:
+3. Handle recipe requests - if user mentions a recipe, extract ingredients AND cooking instructions
+4. When quantities are not specified, ask the user politely
+5. CRITICAL: NEVER execute add/remove/update actions directly - ALWAYS use "preview" action FIRST
+6. Wait for explicit user confirmation (yes/ok/confirm) before executing changes
+7. If there are no existing shopping lists, suggest creating a new list with a name
+8. Respond with JSON in this exact format:
 
 {
   "action": "add|remove|update|clarify|ask_list|preview",
   "items": [{"name": "item name", "quantity": "2 lbs"}],
   "targetListId": null,
   "targetListName": "optional new list name",
+  "recipe": "optional recipe instructions in markdown format",
   "message": "friendly response to user"
 }
 
 Available shopping lists: ${JSON.stringify(allLists)}
 Current active list: ${activeListInfo}
+
+RECIPE HANDLING:
+- If user mentions making/cooking/baking something, ask if they want to include the recipe
+- Extract ingredients as items with quantities
+- Store cooking instructions in the "recipe" field
+- Format recipe with markdown: use ## for headers, numbered lists (1. 2. 3.) for steps, ** for bold
+- Recipe sections: Ingredients (already in items list), Instructions, Notes/Tips (optional)
 
 CRITICAL WORKFLOW RULES:
 1. When user requests to add/remove/update items, ALWAYS respond with action="preview" FIRST
@@ -1007,6 +1073,16 @@ Response: {"action": "preview", "items": [{"name": "milk"}], "targetListId": ${a
 
 User: "yes"
 Response: {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "✅ **Removed** milk from ${activeListName}"}
+
+Example - Recipe with shopping list:
+User: "I want to make chocolate chip cookies"
+Response: {"action": "clarify", "message": "Great! Would you like me to create a shopping list with the ingredients and include the recipe instructions?"}
+
+User: "yes please"
+Response: {"action": "preview", "items": [{"name": "all-purpose flour", "quantity": "2 cups"}, {"name": "butter", "quantity": "1 cup"}, {"name": "sugar", "quantity": "3/4 cup"}, {"name": "brown sugar", "quantity": "3/4 cup"}, {"name": "eggs", "quantity": "2"}, {"name": "vanilla extract", "quantity": "2 tsp"}, {"name": "baking soda", "quantity": "1 tsp"}, {"name": "salt", "quantity": "1 tsp"}, {"name": "chocolate chips", "quantity": "2 cups"}], "targetListName": "Chocolate Chip Cookies", "recipe": "## Instructions\n\n1. Preheat oven to 375°F (190°C)\n2. Cream together butter and both sugars until fluffy\n3. Beat in eggs and vanilla extract\n4. In separate bowl, mix flour, baking soda, and salt\n5. Gradually blend dry ingredients into butter mixture\n6. Stir in chocolate chips\n7. Drop rounded tablespoons of dough onto ungreased cookie sheets\n8. Bake for 9-11 minutes or until golden brown\n9. Cool on baking sheet for 2 minutes, then transfer to wire rack\n\n## Tips\n\n- For chewier cookies, slightly underbake them\n- Use room temperature butter for best results\n- Makes about 48 cookies", "message": "Here's what I'll create:\n\n📋 **Create list:** Chocolate Chip Cookies\n\n🛒 **Ingredients:**\n• All-purpose flour - 2 cups\n• Butter - 1 cup\n• Sugar - 3/4 cup\n• Brown sugar - 3/4 cup\n• Eggs - 2\n• Vanilla extract - 2 tsp\n• Baking soda - 1 tsp\n• Salt - 1 tsp\n• Chocolate chips - 2 cups\n\n👨‍🍳 **Recipe:** Included with step-by-step instructions\n\nConfirm? Reply **yes** or **no**."}
+
+User: "yes"
+Response: {"action": "add", "items": [{"name": "all-purpose flour", "quantity": "2 cups"}, {"name": "butter", "quantity": "1 cup"}, {"name": "sugar", "quantity": "3/4 cup"}, {"name": "brown sugar", "quantity": "3/4 cup"}, {"name": "eggs", "quantity": "2"}, {"name": "vanilla extract", "quantity": "2 tsp"}, {"name": "baking soda", "quantity": "1 tsp"}, {"name": "salt", "quantity": "1 tsp"}, {"name": "chocolate chips", "quantity": "2 cups"}], "targetListName": "Chocolate Chip Cookies", "recipe": "## Instructions\n\n1. Preheat oven to 375°F (190°C)\n2. Cream together butter and both sugars until fluffy\n3. Beat in eggs and vanilla extract\n4. In separate bowl, mix flour, baking soda, and salt\n5. Gradually blend dry ingredients into butter mixture\n6. Stir in chocolate chips\n7. Drop rounded tablespoons of dough onto ungreased cookie sheets\n8. Bake for 9-11 minutes or until golden brown\n9. Cool on baking sheet for 2 minutes, then transfer to wire rack\n\n## Tips\n\n- For chewier cookies, slightly underbake them\n- Use room temperature butter for best results\n- Makes about 48 cookies", "message": "✅ **Done!** Created **Chocolate Chip Cookies** list with 9 ingredients and recipe instructions!"}
 
 REMEMBER: NEVER use action="add/remove/update" unless the user has already seen a preview and confirmed with yes/ok/confirm.
 
@@ -1064,6 +1140,7 @@ Always respond with valid JSON only.`;
                         session.pendingAction = {
                             targetListId: response.targetListId,
                             targetListName: response.targetListName,
+                            recipe: response.recipe,
                             actionType: response.items ? 'add' : 'other'
                         };
                         this.saveSessions();
@@ -1077,6 +1154,7 @@ Always respond with valid JSON only.`;
                         const itemsToAdd = response.items || this.pendingItems;
                         if (itemsToAdd) {
                             let targetListId = response.targetListId;
+                            let recipe = response.recipe;
                             
                             // Check if we have pending action data
                             if (session.pendingAction && session.pendingAction.targetListName) {
@@ -1084,6 +1162,9 @@ Always respond with valid JSON only.`;
                             }
                             if (session.pendingAction && session.pendingAction.targetListId) {
                                 targetListId = session.pendingAction.targetListId;
+                            }
+                            if (session.pendingAction && session.pendingAction.recipe) {
+                                recipe = session.pendingAction.recipe;
                             }
                             
                             if (response.targetListName) {
@@ -1101,6 +1182,12 @@ Always respond with valid JSON only.`;
                                     this.addItemToList(targetListId, item.name, item.quantity);
                                 }
                             });
+                            
+                            // Add recipe if provided
+                            if (recipe) {
+                                this.updateListRecipe(targetListId, recipe);
+                            }
+                            
                             this.pendingItems = null;
                             session.pendingItems = null;
                             session.pendingAction = null;
@@ -1139,7 +1226,8 @@ Always respond with valid JSON only.`;
                 const newList = {
                     id: this.nextListId++,
                     name: name,
-                    items: []
+                    items: [],
+                    recipe: null
                 };
                 this.shoppingLists.push(newList);
                 this.saveLists();
@@ -1173,6 +1261,15 @@ Always respond with valid JSON only.`;
                 const list = this.shoppingLists.find(l => l.id === listId);
                 if (list && newName.trim()) {
                     list.name = newName.trim();
+                    this.saveLists();
+                    this.render();
+                }
+            }
+
+            updateListRecipe(listId, recipe) {
+                const list = this.shoppingLists.find(l => l.id === listId);
+                if (list) {
+                    list.recipe = recipe;
                     this.saveLists();
                     this.render();
                 }
@@ -1534,8 +1631,10 @@ Always respond with valid JSON only.`;
                 
                 this.activeListTitle.textContent = activeList.name;
                 
+                let html = '';
+                
                 if (activeList.items.length === 0) {
-                    this.shoppingList.innerHTML = `
+                    html = `
                         <div class="empty-state">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -1544,7 +1643,7 @@ Always respond with valid JSON only.`;
                         </div>
                     `;
                 } else {
-                    this.shoppingList.innerHTML = activeList.items.map(item => `
+                    html = activeList.items.map(item => `
                         <div class="list-item" data-id="${item.id}">
                             <div class="item-info">
                                 <div class="item-name">${this.escapeHtml(item.name)}</div>
@@ -1558,8 +1657,26 @@ Always respond with valid JSON only.`;
                             </div>
                         </div>
                     `).join('');
-                    
-                    // Attach event listeners after rendering
+                }
+                
+                // Add recipe section if exists
+                if (activeList.recipe) {
+                    html += `
+                        <div class="recipe-section">
+                            <div class="recipe-header">
+                                <span class="recipe-title">👨‍🍳 Recipe</span>
+                            </div>
+                            <div class="recipe-content">
+                                ${this.formatRecipe(activeList.recipe)}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                this.shoppingList.innerHTML = html;
+                
+                // Attach event listeners after rendering (only for items, not recipe)
+                if (activeList.items.length > 0) {
                     this.shoppingList.querySelectorAll('.list-item').forEach(itemEl => {
                         const id = parseFloat(itemEl.dataset.id);
                         
@@ -1576,6 +1693,103 @@ Always respond with valid JSON only.`;
                 }
 
                 this.updateStats();
+            }
+
+            formatRecipe(recipe) {
+                // Format recipe text with proper HTML
+                let formatted = this.escapeHtml(recipe);
+                
+                // Convert **bold** to <strong>
+                formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                
+                // Convert numbered lists (1. 2. 3.)
+                const lines = formatted.split('\n');
+                let inOrderedList = false;
+                let inUnorderedList = false;
+                let result = [];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // Check for numbered list items
+                    if (line.match(/^\d+\.\s/)) {
+                        if (!inOrderedList) {
+                            if (inUnorderedList) {
+                                result.push('</ul>');
+                                inUnorderedList = false;
+                            }
+                            result.push('<ol>');
+                            inOrderedList = true;
+                        }
+                        const itemText = line.replace(/^\d+\.\s*/, '');
+                        result.push(`<li>${itemText}</li>`);
+                    }
+                    // Check for bullet points
+                    else if (line.startsWith('•') || line.startsWith('-')) {
+                        if (!inUnorderedList) {
+                            if (inOrderedList) {
+                                result.push('</ol>');
+                                inOrderedList = false;
+                            }
+                            result.push('<ul>');
+                            inUnorderedList = true;
+                        }
+                        const itemText = line.replace(/^[•-]\s*/, '');
+                        result.push(`<li>${itemText}</li>`);
+                    }
+                    // Check for headers (starts with ###, ##, or #)
+                    else if (line.startsWith('###')) {
+                        if (inOrderedList) {
+                            result.push('</ol>');
+                            inOrderedList = false;
+                        }
+                        if (inUnorderedList) {
+                            result.push('</ul>');
+                            inUnorderedList = false;
+                        }
+                        result.push(`<h3>${line.replace(/^###\s*/, '')}</h3>`);
+                    }
+                    else if (line.startsWith('##')) {
+                        if (inOrderedList) {
+                            result.push('</ol>');
+                            inOrderedList = false;
+                        }
+                        if (inUnorderedList) {
+                            result.push('</ul>');
+                            inUnorderedList = false;
+                        }
+                        result.push(`<h3>${line.replace(/^##\s*/, '')}</h3>`);
+                    }
+                    else if (line.startsWith('#')) {
+                        if (inOrderedList) {
+                            result.push('</ol>');
+                            inOrderedList = false;
+                        }
+                        if (inUnorderedList) {
+                            result.push('</ul>');
+                            inUnorderedList = false;
+                        }
+                        result.push(`<h3>${line.replace(/^#\s*/, '')}</h3>`);
+                    }
+                    else {
+                        if (inOrderedList) {
+                            result.push('</ol>');
+                            inOrderedList = false;
+                        }
+                        if (inUnorderedList) {
+                            result.push('</ul>');
+                            inUnorderedList = false;
+                        }
+                        if (line) {
+                            result.push(`<p>${line}</p>`);
+                        }
+                    }
+                }
+                
+                if (inOrderedList) result.push('</ol>');
+                if (inUnorderedList) result.push('</ul>');
+                
+                return result.join('');
             }
 
             updateStats() {
