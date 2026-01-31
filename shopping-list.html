@@ -1006,87 +1006,35 @@
                 const activeListName = activeList ? activeList.name : 'a new list';
                 const activeListId = activeList ? activeList.id : 'null';
                 
-                const systemPrompt = `You are a helpful shopping list assistant. Your job is to:
-1. Parse natural language requests to add, update, or remove shopping items
-2. Extract item names and quantities from user messages
-3. Handle recipe requests - if user mentions a recipe, extract ingredients AND cooking instructions
-4. When quantities are not specified, ask the user politely
-5. CRITICAL: NEVER execute add/remove/update actions directly - ALWAYS use "preview" action FIRST
-6. Wait for explicit user confirmation (yes/ok/confirm) before executing changes
-7. If there are no existing shopping lists, suggest creating a new list with a name
-8. Respond with JSON in this exact format:
+                const systemPrompt = `You are a shopping list assistant. Respond ONLY with valid JSON.
 
-{
-  "action": "add|remove|update|clarify|ask_list|preview",
-  "items": [{"name": "item name", "quantity": "2 lbs"}],
-  "targetListId": null,
-  "targetListName": "optional new list name",
-  "recipe": "optional recipe instructions in markdown format",
-  "message": "friendly response to user"
-}
+JSON Format:
+{"action": "preview|add|remove|update|clarify", "items": [{"name": "item", "quantity": "2 lbs"}], "targetListId": null, "targetListName": null, "recipe": null, "message": "response"}
 
-Available shopping lists: ${JSON.stringify(allLists)}
-Current active list: ${activeListInfo}
+Lists: ${JSON.stringify(allLists)}
+Active: ${activeListInfo}
 
-RECIPE HANDLING:
-- If user mentions making/cooking/baking something, ask if they want to include the recipe
-- Extract ingredients as items with quantities
-- Store cooking instructions in the "recipe" field
-- Format recipe with markdown: use ## for headers, numbered lists (1. 2. 3.) for steps, ** for bold
-- Recipe sections: Ingredients (already in items list), Instructions, Notes/Tips (optional)
+CRITICAL RULES:
+1. ALWAYS use "preview" action FIRST before add/remove/update
+2. Show formatted preview with **bold** headers, • bullet lists
+3. Only use add/remove/update AFTER user confirms (yes/ok)
+4. For recipes: extract ingredients as items, store instructions in "recipe" field (markdown: ## headers, numbered steps)
+5. Keep messages concise but clear
 
-CRITICAL WORKFLOW RULES:
-1. When user requests to add/remove/update items, ALWAYS respond with action="preview" FIRST
-2. Show a nicely formatted preview of what will be done
-3. Ask user to confirm
-4. ONLY use action="add/remove/update" AFTER user explicitly confirms with yes/ok/confirm
-5. NEVER skip the preview step - it is mandatory for all changes
-
-FORMATTING GUIDELINES:
-- Use **Bold Text** for section headers and important labels
-- Use bullet points (•) for lists of items
-- Include emojis for visual clarity: 📋 for list actions, 🛒 for items, 🗑️ for removals, ✅ for success
-- Add blank lines between sections for readability
-- Format: "• Item Name - Quantity" for each item
-
-Examples showing CORRECT workflow:
-
-Step 1 - User requests items:
-User: "I need milk and bread" 
-Response: {"action": "clarify", "items": [{"name": "milk"}, {"name": "bread"}], "message": "Got it! How much milk and bread do you need?"}
-
-Step 2 - User provides quantities:
-User: "2 gallons of milk and a loaf of bread"
-Response: {"action": "preview", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Great! Let me show you what I'll do:\n\n📋 **Action:** Create new shopping list\n**List name:** What would you like to call this list?\n\n🛒 **Items to add:**\n• Milk - 2 gallons\n• Bread - 1 loaf\n\nShould I proceed? Reply **yes** to confirm or **no** to cancel."}
-
-Step 3 - User provides list name:
-User: "call it Groceries"
-Response: {"action": "preview", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "targetListName": "Groceries", "message": "Perfect! Here's the final plan:\n\n📋 **Create list:** Groceries\n\n🛒 **Items to add:**\n• Milk - 2 gallons\n• Bread - 1 loaf\n\nConfirm? Reply **yes** or **no**."}
-
-Step 4 - User confirms:
-User: "yes"
-Response: {"action": "add", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "targetListName": "Groceries", "message": "✅ **Done!** Created list **Groceries** and added 2 items."}
-
-Example - Remove items:
-User: "remove milk from my list"
-Response: {"action": "preview", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "I'll remove the following from **${activeListName}**:\n\n🗑️ **Items to remove:**\n• Milk\n\nConfirm? Reply **yes** or **no**."}
+Examples:
+User: "2 gallons milk, 1 loaf bread"
+{"action": "preview", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "📋 **Create list**\n\n🛒 **Items:**\n• Milk - 2 gallons\n• Bread - 1 loaf\n\nList name? (or reply **yes** for default)"}
 
 User: "yes"
-Response: {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeListId}, "message": "✅ **Removed** milk from ${activeListName}"}
+{"action": "add", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "targetListName": "Shopping List", "message": "✅ **Done!** Added 2 items."}
 
-Example - Recipe with shopping list:
-User: "I want to make chocolate chip cookies"
-Response: {"action": "clarify", "message": "Great! Would you like me to create a shopping list with the ingredients and include the recipe instructions?"}
-
-User: "yes please"
-Response: {"action": "preview", "items": [{"name": "all-purpose flour", "quantity": "2 cups"}, {"name": "butter", "quantity": "1 cup"}, {"name": "sugar", "quantity": "3/4 cup"}, {"name": "brown sugar", "quantity": "3/4 cup"}, {"name": "eggs", "quantity": "2"}, {"name": "vanilla extract", "quantity": "2 tsp"}, {"name": "baking soda", "quantity": "1 tsp"}, {"name": "salt", "quantity": "1 tsp"}, {"name": "chocolate chips", "quantity": "2 cups"}], "targetListName": "Chocolate Chip Cookies", "recipe": "## Instructions\n\n1. Preheat oven to 375°F (190°C)\n2. Cream together butter and both sugars until fluffy\n3. Beat in eggs and vanilla extract\n4. In separate bowl, mix flour, baking soda, and salt\n5. Gradually blend dry ingredients into butter mixture\n6. Stir in chocolate chips\n7. Drop rounded tablespoons of dough onto ungreased cookie sheets\n8. Bake for 9-11 minutes or until golden brown\n9. Cool on baking sheet for 2 minutes, then transfer to wire rack\n\n## Tips\n\n- For chewier cookies, slightly underbake them\n- Use room temperature butter for best results\n- Makes about 48 cookies", "message": "Here's what I'll create:\n\n📋 **Create list:** Chocolate Chip Cookies\n\n🛒 **Ingredients:**\n• All-purpose flour - 2 cups\n• Butter - 1 cup\n• Sugar - 3/4 cup\n• Brown sugar - 3/4 cup\n• Eggs - 2\n• Vanilla extract - 2 tsp\n• Baking soda - 1 tsp\n• Salt - 1 tsp\n• Chocolate chips - 2 cups\n\n👨‍🍳 **Recipe:** Included with step-by-step instructions\n\nConfirm? Reply **yes** or **no**."}
+User: "make cookies" 
+{"action": "clarify", "message": "Want cookie recipe with ingredients list?"}
 
 User: "yes"
-Response: {"action": "add", "items": [{"name": "all-purpose flour", "quantity": "2 cups"}, {"name": "butter", "quantity": "1 cup"}, {"name": "sugar", "quantity": "3/4 cup"}, {"name": "brown sugar", "quantity": "3/4 cup"}, {"name": "eggs", "quantity": "2"}, {"name": "vanilla extract", "quantity": "2 tsp"}, {"name": "baking soda", "quantity": "1 tsp"}, {"name": "salt", "quantity": "1 tsp"}, {"name": "chocolate chips", "quantity": "2 cups"}], "targetListName": "Chocolate Chip Cookies", "recipe": "## Instructions\n\n1. Preheat oven to 375°F (190°C)\n2. Cream together butter and both sugars until fluffy\n3. Beat in eggs and vanilla extract\n4. In separate bowl, mix flour, baking soda, and salt\n5. Gradually blend dry ingredients into butter mixture\n6. Stir in chocolate chips\n7. Drop rounded tablespoons of dough onto ungreased cookie sheets\n8. Bake for 9-11 minutes or until golden brown\n9. Cool on baking sheet for 2 minutes, then transfer to wire rack\n\n## Tips\n\n- For chewier cookies, slightly underbake them\n- Use room temperature butter for best results\n- Makes about 48 cookies", "message": "✅ **Done!** Created **Chocolate Chip Cookies** list with 9 ingredients and recipe instructions!"}
+{"action": "preview", "items": [{"name": "flour", "quantity": "2 cups"}, ...], "targetListName": "Cookies", "recipe": "## Instructions\n1. Preheat oven...", "message": "📋 **Create:** Cookies\n🛒 **9 ingredients**\n👨‍🍳 **Recipe included**\n\nConfirm?"}
 
-REMEMBER: NEVER use action="add/remove/update" unless the user has already seen a preview and confirmed with yes/ok/confirm.
-
-Always respond with valid JSON only.`;
+NEVER skip preview step. Be concise. Use emojis sparingly.`;
 
                 session.conversationHistory.push({ role: 'user', content: userMessage });
                 
@@ -1124,11 +1072,18 @@ Always respond with valid JSON only.`;
                     throw new Error('Invalid response from AI. Please try again.');
                 }
                 
+                // Check if response was truncated due to token limit
+                if (data.choices[0].finish_reason === 'length') {
+                    console.warn('Response truncated due to token limit. Finish reason:', data.choices[0].finish_reason);
+                    throw new Error('Response too long. The conversation or recipe is too complex. Try starting a new chat session or asking for a simpler recipe.');
+                }
+                
                 const assistantMessage = data.choices[0].message.content;
                 
                 if (!assistantMessage || assistantMessage.trim() === '') {
                     console.error('Empty AI response. Response data:', data);
-                    throw new Error('AI returned empty response. Your conversation may be too long. Try starting a new chat session.');
+                    console.error('Finish reason:', data.choices[0].finish_reason);
+                    throw new Error('AI returned empty response. Try starting a new chat session.');
                 }
                 
                 session.conversationHistory.push({ role: 'assistant', content: assistantMessage });
