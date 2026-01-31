@@ -727,9 +727,6 @@
                 this.activeSessionId = null;
                 this.nextSessionId = Math.max(0, ...this.chatSessions.map(s => s.id || 0)) + 1;
                 
-                // Always start with a new session on page load/refresh
-                this.createNewSession(true);
-                
                 this.config = { ...CONFIG };
                 this.pendingItems = null;
                 this.init();
@@ -738,7 +735,9 @@
             async init() {
                 this.cacheElements();
                 this.bindEvents();
-                this.render();
+                
+                // Create new session after elements are cached
+                this.createNewSession(true);
                 
                 await this.loadConfig();
                 this.checkConfig();
