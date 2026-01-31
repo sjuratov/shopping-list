@@ -26,15 +26,15 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 900px;
+            max-width: 1400px;
             padding: 40px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 350px 1fr;
             gap: 30px;
             max-height: 90vh;
         }
 
-        .chat-section, .list-section {
+        .chat-section, .list-section, .lists-manager-section {
             display: flex;
             flex-direction: column;
         }
@@ -305,9 +305,181 @@
             to { transform: rotate(360deg); }
         }
 
-        @media (max-width: 768px) {
+        .lists-manager {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 560px;
+        }
+
+        .list-name-item {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .list-name-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .list-name-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: #667eea;
+        }
+
+        .list-name-text {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .list-name-item.active .list-name-text {
+            color: #667eea;
+        }
+
+        .list-name-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .list-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .list-control-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .list-control-btn:hover {
+            background: #f0f0f0;
+            transform: scale(1.05);
+        }
+
+        .list-control-btn.rename-btn {
+            color: #667eea;
+            border-color: #667eea;
+        }
+
+        .list-control-btn.rename-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .list-control-btn.delete-list-btn {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .list-control-btn.delete-list-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .list-control-btn.save-btn {
+            color: #28a745;
+            border-color: #28a745;
+        }
+
+        .list-control-btn.save-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        .list-control-btn.cancel-btn {
+            color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .list-control-btn.cancel-btn:hover {
+            background: #6c757d;
+            color: white;
+        }
+
+        .add-list-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        #newListInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        #newListInput:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #addListBtn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #addListBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #addListBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 1200px) {
             .container {
                 grid-template-columns: 1fr;
+                max-width: 600px;
+            }
+
+            .lists-manager-section {
+                order: 2;
+            }
+
+            .list-section {
+                order: 3;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
                 padding: 20px;
             }
 
@@ -345,8 +517,17 @@
             </div>
         </div>
 
+        <div class="lists-manager-section">
+            <h1>📋 My Lists</h1>
+            <div class="lists-manager" id="listsManager"></div>
+            <div class="add-list-section">
+                <input type="text" id="newListInput" placeholder="New list name..." autocomplete="off">
+                <button id="addListBtn">Add</button>
+            </div>
+        </div>
+
         <div class="list-section">
-            <h1>🛒 Shopping List</h1>
+            <h1>🛒 <span id="activeListTitle">Shopping List</span></h1>
             <div class="shopping-list" id="shoppingList"></div>
             <div class="stats">
                 <div class="stat-item">
@@ -367,11 +548,20 @@
 
         class ShoppingListApp {
             constructor() {
-                this.items = JSON.parse(localStorage.getItem('shoppingItems')) || [];
+                this.shoppingLists = JSON.parse(localStorage.getItem('shoppingLists')) || [];
+                if (this.shoppingLists.length === 0) {
+                    this.shoppingLists.push({
+                        id: 1,
+                        name: 'My Shopping List',
+                        items: []
+                    });
+                }
+                this.activeListId = parseInt(localStorage.getItem('activeListId')) || this.shoppingLists[0].id;
+                this.nextListId = Math.max(0, ...this.shoppingLists.map(l => l.id || 0)) + 1;
                 this.messages = [];
                 this.config = { ...CONFIG };
                 this.conversationHistory = [];
-                this.nextId = Math.max(0, ...this.items.map(i => i.id || 0)) + 1;
+                this.pendingItems = null;
                 this.init();
             }
 
@@ -384,7 +574,7 @@
                 this.checkConfig();
                 
                 if (this.messages.length === 0) {
-                    this.addMessage('assistant', "Hi! I'm your AI shopping assistant. Tell me what you need to buy in plain English, like 'I need milk, bread, and eggs' or 'add bananas to my list'.");
+                    this.addMessage('assistant', "Hi! I'm your AI shopping assistant. Tell me what you need to buy, and I'll help you organize your shopping lists!");
                 }
             }
 
@@ -410,6 +600,10 @@
                 this.shoppingList = document.getElementById('shoppingList');
                 this.totalItems = document.getElementById('totalItems');
                 this.configBanner = document.getElementById('configBanner');
+                this.listsManager = document.getElementById('listsManager');
+                this.newListInput = document.getElementById('newListInput');
+                this.addListBtn = document.getElementById('addListBtn');
+                this.activeListTitle = document.getElementById('activeListTitle');
             }
 
             bindEvents() {
@@ -418,6 +612,13 @@
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         this.handleSend();
+                    }
+                });
+                this.addListBtn.addEventListener('click', () => this.handleAddList());
+                this.newListInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.handleAddList();
                     }
                 });
             }
@@ -458,23 +659,31 @@
             }
 
             async callAzureOpenAI(userMessage) {
+                const activeList = this.getActiveList();
+                const allLists = this.shoppingLists.map(l => ({ id: l.id, name: l.name }));
+                
                 const systemPrompt = `You are a helpful shopping list assistant. Your job is to:
 1. Parse natural language requests to add, update, or remove shopping items
 2. Extract item names and quantities from user messages
 3. When quantities are not specified, ask the user politely
-4. Respond with JSON in this exact format:
+4. Ask which list to add items to if action is "add" and targetListId is not specified
+5. Respond with JSON in this exact format:
 {
-  "action": "add|remove|update|clarify",
+  "action": "add|remove|update|clarify|ask_list",
   "items": [{"name": "item name", "quantity": "2 lbs"}],
+  "targetListId": null,
   "message": "friendly response to user"
 }
 
-Current shopping list: ${JSON.stringify(this.items)}
+Available shopping lists: ${JSON.stringify(allLists)}
+Current active list: {"id": ${activeList.id}, "name": "${activeList.name}", "items": ${JSON.stringify(activeList.items)}}
 
 Examples:
 - User: "I need milk and bread" -> {"action": "clarify", "items": [{"name": "milk"}, {"name": "bread"}], "message": "Got it! How much milk and bread do you need?"}
-- User: "2 gallons of milk and a loaf of bread" -> {"action": "add", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Added 2 gallons of milk and 1 loaf of bread to your list!"}
-- User: "remove milk" -> {"action": "remove", "items": [{"name": "milk"}], "message": "Removed milk from your list."}
+- User: "2 gallons of milk and a loaf of bread" -> {"action": "ask_list", "items": [{"name": "milk", "quantity": "2 gallons"}, {"name": "bread", "quantity": "1 loaf"}], "message": "Should I add these to your current list '${activeList.name}', or would you like to create a new list or choose a different one?"}
+- User: "add to current list" or "yes" -> {"action": "add", "items": [...pending items...], "targetListId": ${activeList.id}, "message": "Added items to ${activeList.name}!"}
+- User: "create new list called Groceries" -> {"action": "add", "items": [...], "targetListId": null, "targetListName": "Groceries", "message": "Created new list 'Groceries' and added items!"}
+- User: "remove milk" -> {"action": "remove", "items": [{"name": "milk"}], "targetListId": ${activeList.id}, "message": "Removed milk from your list."}
 
 Always respond with valid JSON only.`;
 
@@ -520,46 +729,128 @@ Always respond with valid JSON only.`;
                 this.addMessage('assistant', response.message);
 
                 switch (response.action) {
+                    case 'ask_list':
+                        this.pendingItems = response.items;
+                        break;
                     case 'add':
-                        response.items.forEach(item => {
-                            if (item.quantity) {
-                                this.addItem(item.name, item.quantity);
+                        const itemsToAdd = response.items || this.pendingItems;
+                        if (itemsToAdd) {
+                            let targetListId = response.targetListId;
+                            
+                            if (response.targetListName) {
+                                const newList = this.createNewList(response.targetListName);
+                                targetListId = newList.id;
+                                this.setActiveList(targetListId);
                             }
-                        });
+                            
+                            if (!targetListId) {
+                                targetListId = this.activeListId;
+                            }
+                            
+                            itemsToAdd.forEach(item => {
+                                if (item.quantity) {
+                                    this.addItemToList(targetListId, item.name, item.quantity);
+                                }
+                            });
+                            this.pendingItems = null;
+                        }
                         break;
                     case 'remove':
+                        const listId = response.targetListId || this.activeListId;
                         response.items.forEach(item => {
-                            this.removeItem(item.name);
+                            this.removeItemFromList(listId, item.name);
                         });
                         break;
                     case 'update':
+                        const updateListId = response.targetListId || this.activeListId;
                         response.items.forEach(item => {
-                            this.updateItem(item.name, item.quantity);
+                            this.updateItemInList(updateListId, item.name, item.quantity);
                         });
                         break;
                 }
 
-                this.renderList();
+                this.render();
             }
 
-            addItem(name, quantity) {
+            getActiveList() {
+                return this.shoppingLists.find(l => l.id === this.activeListId) || this.shoppingLists[0];
+            }
+
+            setActiveList(listId) {
+                this.activeListId = listId;
+                localStorage.setItem('activeListId', listId);
+                this.render();
+            }
+
+            createNewList(name) {
+                const newList = {
+                    id: this.nextListId++,
+                    name: name,
+                    items: []
+                };
+                this.shoppingLists.push(newList);
+                this.saveLists();
+                return newList;
+            }
+
+            handleAddList() {
+                const name = this.newListInput.value.trim();
+                if (!name) return;
+                
+                const newList = this.createNewList(name);
+                this.setActiveList(newList.id);
+                this.newListInput.value = '';
+                this.render();
+            }
+
+            deleteList(listId) {
+                if (this.shoppingLists.length === 1) {
+                    alert('You must have at least one shopping list');
+                    return;
+                }
+                
+                this.shoppingLists = this.shoppingLists.filter(l => l.id !== listId);
+                
+                if (this.activeListId === listId) {
+                    this.activeListId = this.shoppingLists[0].id;
+                }
+                
+                this.saveLists();
+                this.render();
+            }
+
+            renameList(listId, newName) {
+                const list = this.shoppingLists.find(l => l.id === listId);
+                if (list && newName.trim()) {
+                    list.name = newName.trim();
+                    this.saveLists();
+                    this.render();
+                }
+            }
+
+            addItemToList(listId, name, quantity) {
+                const list = this.shoppingLists.find(l => l.id === listId);
+                if (!list) return;
+                
                 const normalizedQty = this.normalizeQuantity(quantity);
-                const existingItem = this.items.find(i => 
+                const existingItem = list.items.find(i => 
                     i.name.toLowerCase() === name.toLowerCase()
                 );
+                
+                const nextId = Math.max(0, ...list.items.map(i => i.id || 0)) + 1;
                 
                 if (existingItem) {
                     existingItem.quantity = normalizedQty;
                     existingItem.numericQty = this.extractNumericQuantity(normalizedQty);
                 } else {
-                    this.items.push({
-                        id: this.nextId++,
+                    list.items.push({
+                        id: nextId,
                         name: name,
                         quantity: normalizedQty,
                         numericQty: this.extractNumericQuantity(normalizedQty)
                     });
                 }
-                this.saveItems();
+                this.saveLists();
             }
 
             extractNumericQuantity(quantity) {
@@ -580,47 +871,56 @@ Always respond with valid JSON only.`;
                 return quantity;
             }
 
-            removeItem(name) {
-                this.items = this.items.filter(i => 
+            removeItemFromList(listId, name) {
+                const list = this.shoppingLists.find(l => l.id === listId);
+                if (!list) return;
+                
+                list.items = list.items.filter(i => 
                     i.name.toLowerCase() !== name.toLowerCase()
                 );
-                this.saveItems();
+                this.saveLists();
             }
 
-            updateItem(name, quantity) {
-                const item = this.items.find(i => 
+            updateItemInList(listId, name, quantity) {
+                const list = this.shoppingLists.find(l => l.id === listId);
+                if (!list) return;
+                
+                const item = list.items.find(i => 
                     i.name.toLowerCase() === name.toLowerCase()
                 );
                 if (item && quantity) {
                     const normalizedQty = this.normalizeQuantity(quantity);
                     item.quantity = normalizedQty;
                     item.numericQty = this.extractNumericQuantity(normalizedQty);
-                    this.saveItems();
+                    this.saveLists();
                 }
             }
 
             deleteItem(id) {
-                this.items = this.items.filter(i => i.id !== id);
-                this.saveItems();
+                const list = this.getActiveList();
+                list.items = list.items.filter(i => i.id !== id);
+                this.saveLists();
                 this.renderList();
             }
 
             incrementQuantity(id) {
-                const item = this.items.find(i => i.id === id);
+                const list = this.getActiveList();
+                const item = list.items.find(i => i.id === id);
                 if (item) {
                     item.numericQty = (item.numericQty || 1) + 1;
                     item.quantity = item.quantity.replace(/^\d+/, item.numericQty);
-                    this.saveItems();
+                    this.saveLists();
                     this.renderList();
                 }
             }
 
             decrementQuantity(id) {
-                const item = this.items.find(i => i.id === id);
+                const list = this.getActiveList();
+                const item = list.items.find(i => i.id === id);
                 if (item && item.numericQty > 1) {
                     item.numericQty -= 1;
                     item.quantity = item.quantity.replace(/^\d+/, item.numericQty);
-                    this.saveItems();
+                    this.saveLists();
                     this.renderList();
                 }
             }
@@ -632,7 +932,102 @@ Always respond with valid JSON only.`;
 
             render() {
                 this.renderMessages();
+                this.renderListsManager();
                 this.renderList();
+            }
+
+            renderListsManager() {
+                if (this.shoppingLists.length === 0) {
+                    this.listsManager.innerHTML = '<div class="empty-state"><p>No lists yet</p></div>';
+                    return;
+                }
+
+                this.listsManager.innerHTML = this.shoppingLists.map(list => {
+                    const isActive = list.id === this.activeListId;
+                    const itemCount = list.items.length;
+                    
+                    return `
+                        <div class="list-name-item ${isActive ? 'active' : ''}" data-list-id="${list.id}">
+                            <div class="list-name-text">
+                                ${this.escapeHtml(list.name)}
+                                <span style="font-size: 12px; color: #999; font-weight: normal;"> (${itemCount})</span>
+                            </div>
+                            <div class="list-controls">
+                                <button class="list-control-btn rename-btn" data-action="rename" title="Rename">✏️</button>
+                                <button class="list-control-btn delete-list-btn" data-action="delete" title="Delete">🗑</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                this.listsManager.querySelectorAll('.list-name-item').forEach(listEl => {
+                    const listId = parseInt(listEl.dataset.listId);
+                    
+                    listEl.addEventListener('click', (e) => {
+                        if (!e.target.closest('.list-controls')) {
+                            this.setActiveList(listId);
+                        }
+                    });
+                    
+                    listEl.querySelectorAll('.list-control-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const action = btn.dataset.action;
+                            
+                            if (action === 'rename') {
+                                this.startRenameList(listId, listEl);
+                            } else if (action === 'delete') {
+                                if (confirm(`Delete "${this.shoppingLists.find(l => l.id === listId).name}"?`)) {
+                                    this.deleteList(listId);
+                                }
+                            }
+                        });
+                    });
+                });
+            }
+
+            startRenameList(listId, listEl) {
+                const list = this.shoppingLists.find(l => l.id === listId);
+                if (!list) return;
+                
+                const currentName = list.name;
+                listEl.innerHTML = `
+                    <input type="text" class="list-name-input" value="${this.escapeHtml(currentName)}" data-list-id="${listId}">
+                    <div class="list-controls">
+                        <button class="list-control-btn save-btn" data-action="save">✓</button>
+                        <button class="list-control-btn cancel-btn" data-action="cancel">✕</button>
+                    </div>
+                `;
+                
+                const input = listEl.querySelector('.list-name-input');
+                input.focus();
+                input.select();
+                
+                const saveRename = () => {
+                    const newName = input.value.trim();
+                    if (newName && newName !== currentName) {
+                        this.renameList(listId, newName);
+                    } else {
+                        this.render();
+                    }
+                };
+                
+                const cancelRename = () => {
+                    this.render();
+                };
+                
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveRename();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancelRename();
+                    }
+                });
+                
+                listEl.querySelector('[data-action="save"]').addEventListener('click', saveRename);
+                listEl.querySelector('[data-action="cancel"]').addEventListener('click', cancelRename);
             }
 
             renderMessages() {
@@ -651,7 +1046,10 @@ Always respond with valid JSON only.`;
             }
 
             renderList() {
-                if (this.items.length === 0) {
+                const activeList = this.getActiveList();
+                this.activeListTitle.textContent = activeList.name;
+                
+                if (activeList.items.length === 0) {
                     this.shoppingList.innerHTML = `
                         <div class="empty-state">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -661,7 +1059,7 @@ Always respond with valid JSON only.`;
                         </div>
                     `;
                 } else {
-                    this.shoppingList.innerHTML = this.items.map(item => `
+                    this.shoppingList.innerHTML = activeList.items.map(item => `
                         <div class="list-item" data-id="${item.id}">
                             <div class="item-info">
                                 <div class="item-name">${this.escapeHtml(item.name)}</div>
@@ -696,11 +1094,12 @@ Always respond with valid JSON only.`;
             }
 
             updateStats() {
-                this.totalItems.textContent = this.items.length;
+                const activeList = this.getActiveList();
+                this.totalItems.textContent = activeList.items.length;
             }
 
-            saveItems() {
-                localStorage.setItem('shoppingItems', JSON.stringify(this.items));
+            saveLists() {
+                localStorage.setItem('shoppingLists', JSON.stringify(this.shoppingLists));
             }
 
             escapeHtml(text) {
