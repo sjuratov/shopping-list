@@ -12,6 +12,35 @@ A modern shopping list application powered by Azure OpenAI that understands natu
 
 ## Setup
 
+### Option 1: Docker (Recommended)
+
+1. Make sure Docker is installed on your machine
+
+2. Create a `.env` file with your Azure OpenAI credentials:
+```bash
+cp .env.example .env
+# Edit .env with your credentials
+```
+
+3. Build and run with Docker Compose:
+```bash
+docker-compose up -d
+```
+
+4. Open http://localhost:3000 in your browser
+
+5. To stop the container:
+```bash
+docker-compose down
+```
+
+6. To view logs:
+```bash
+docker-compose logs -f
+```
+
+### Option 2: Node.js Directly
+
 1. Create a `.env` file (copy from `.env.example`):
 ```bash
 cp .env.example .env
@@ -26,13 +55,13 @@ AZURE_OPENAI_DEPLOYMENT=your-deployment-name
 
 3. Install dependencies and start the server:
 ```bash
-npm install dotenv
+npm install
 node server.js
 ```
 
 4. Open http://localhost:3000 in your browser
 
-## Alternative: Browser-only Mode
+### Option 3: Browser-only Mode
 
 Open `shopping-list.html` directly in your browser and configure via console:
 ```javascript
